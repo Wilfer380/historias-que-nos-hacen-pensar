@@ -89,10 +89,13 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `bc106ce` (`feat(video): add lazy integrated playback`).
   - Independent verification completed with no findings; real decoding/rendering/audio validation remains assigned to T4.
 
-- [ ] **T4 — Run local browser and media verification**
-  - Add Playwright coverage for roulette state, exact mapping, no repeats, reset, responsive interaction, and the twelve video routes.
-  - Validate real media responses, metadata/audio presence where tooling permits, frame rendering/time progression, pause/resume, close, and resource switching.
-  - Checks: `npm test`, `npm run build`, and `npm run test:e2e` pass with observed evidence; limitations are reported rather than invented.
+- [x] **T4 — Run local browser and media verification**
+  - Added Playwright coverage for deterministic roulette state, exact mapping, lazy request timing, no repeats, reset, responsive interaction, and all twelve video routes.
+  - Validated exact HTTP 200/206 semantics, `video/mp4`, byte ranges, finite duration, positive dimensions, presented frames, exposed audio tracks, time progression, pause/resume, restart, close cleanup, and story switching.
+  - Chrome ran the exhaustive twelve-video lifecycle; Chrome, Edge, and Firefox ran compatibility plus desktop/mobile interaction checks.
+  - Checks passed: `npm test -- --run` (19 tests), `npm run build`, `npm run verify:media` (12 hashes), and `npm run test:e2e` (12 passed, 6 deliberately browser-scoped skips).
+  - Work-unit commit: `77d3442` (`test(e2e): verify roulette and all media`).
+  - Independent verification initially found coverage gaps; two correction rounds closed them, and final re-verification reported no findings.
 
 - [ ] **T5 — Deploy and verify public HTTPS delivery**
   - Select an authorized free provider based on actual limits and available user access.
@@ -132,7 +135,11 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - T3 ordinary verification passed: `npm test -- --run` (19 tests), `npm run build`, and `npm run verify:media` (12 hashes).
 - Independent T3 verification found no issues and confirmed all cleanup paths; parent focused player spot check passed 5 tests.
 - T3 was committed as work unit `bc106ce` on `feature/interactive-video-roulette`.
+- T4 final browser matrix passed: Chrome 6/6; Edge 3/3 applicable; Firefox 3/3 applicable; 6 skips were deliberate Chrome-only exhaustive/HTTP scopes.
+- All twelve Chrome videos had finite durations (53.96–70.36 seconds), positive dimensions, advancing time, a presented frame via `requestVideoFrameCallback`, and one audio track via `captureStream()`.
+- Network tests proved zero MP4 requests before explicit activation, only the selected allowlisted URL afterward, exact HTTP 200 full responses, and exact HTTP 206 range responses.
+- T4 was committed as work unit `77d3442` on `feature/interactive-video-roulette`.
 
 ## Next Step
 
-Execute T4: add Playwright browser coverage and validate real local HTTP media responses, rendered frames, playback-time progression, audio tracks, pause/resume, close, reset, and story switching across all twelve videos.
+Execute T5: document video replacement, deploy the production build to an authorized free HTTPS provider, then rerun route, range, lazy-load, roulette, responsive, and all-video playback checks against the public URL.
