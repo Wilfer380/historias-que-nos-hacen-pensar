@@ -54,7 +54,8 @@ The six `(1)` suffixes in the initial specification are absent from the supplied
 - Production must not preload the twelve videos.
 - Strict TDD mode: off. Source: the user requires automated tests and real playback validation but did not request strict RED/GREEN sequencing, and this new project has no existing TDD configuration. Ordinary functional testing remains mandatory.
 - Planned runners: `npm test`, `npm run build`, and `npm run test:e2e` after project scaffolding.
-- Delivery strategy: `ask-on-risk` because the forecast exceeds 400 authored lines. Chain strategy remains pending before the first commit.
+- Delivery strategy: `ask-on-risk` because the forecast exceeds 400 authored lines.
+- Chain strategy: `feature-branch-chain`, explicitly selected by the user. Implementation lives on `feature/interactive-video-roulette` and each coherent task closes with a work-unit commit.
 
 ## Review Workload Forecast
 
@@ -62,12 +63,14 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 
 ## Actionable Checklist
 
-- [ ] **T1 — Scaffold and protect the media registry**
-  - Initialize the React + TypeScript project and test tooling.
-  - Add the typed twelve-story registry and integrity manifest.
-  - Copy each source MP4 to its canonical web filename without altering bytes.
-  - Add automated mapping/integrity checks.
-  - Checks: exactly twelve unique IDs/phrases/URLs; expected SHA-256 values; source and deployed-copy hashes match.
+- [x] **T1 — Scaffold and protect the media registry**
+  - Initialized the React + TypeScript project and test tooling.
+  - Added the typed twelve-story registry and integrity manifest.
+  - Copied each source MP4 to its canonical web filename without altering bytes.
+  - Added automated mapping/integrity checks.
+  - Checks passed: exactly twelve unique IDs/phrases/URLs; expected SHA-256 values; all deployed-copy hashes match.
+  - Work-unit commit: `cf37302` (`feat(media): establish verified story registry`).
+  - Native assessment/review was unavailable because the native authority inventory returned `schema-incompatible`; the required independent verifier completed with no findings.
 
 - [ ] **T2 — Implement exact non-repeating roulette behavior**
   - Build the responsive wheel, fixed pointer, animation, selection math, revealed state, end-of-round state, and reset.
@@ -112,7 +115,11 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - SHA-256 and byte-size audit complete using Python standard-library read-only hashing.
 - Total input size: 105,517,157 bytes (100.63 MiB); largest files are approximately 10 MiB, so no file crosses the common 25 MiB per-asset threshold.
 - Full codec/audio/duration metadata is still pending because `ffprobe` is not installed.
+- T1 ordinary verification passed: `npm test -- --run` (3 tests), `npm run build`, and `npm run verify:media` (12 hashes).
+- An independent verification run repeated all three commands and reported no findings.
+- Parent spot check repeated `npm run verify:media` successfully.
+- T1 was committed as work unit `cf37302` on `feature/interactive-video-roulette`.
 
 ## Next Step
 
-Execute T1 through the bounded implementation worker, then assess and verify the resulting candidate before continuing to roulette behavior.
+Execute T2 through the bounded implementation worker: build the exact-pointer, non-repeating roulette behavior and its focused tests.
