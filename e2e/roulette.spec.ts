@@ -1,17 +1,29 @@
 import { expect, test, type ElementHandle, type Locator, type Page } from '@playwright/test'
+import { publicMediaURL } from '../playwright.config'
 import { stories } from '../src/data/stories'
 
-const allowedMediaRoutes = new Set(stories.map((story) => story.videoUrl))
+type Story = (typeof stories)[number]
 
-function allowlistedMediaUrl(route: string, baseURL: string | undefined) {
-  if (!allowedMediaRoutes.has(route as (typeof stories)[number]['videoUrl'])) {
-    throw new Error(`Rejected non-registry media route: ${route}`)
+function requireBaseURL(baseURL: string | undefined) {
+  if (!baseURL) throw new Error('Playwright baseURL must be configured')
+  return baseURL
+}
+
+function expectedMediaPath(story: Story, baseURL: string | undefined) {
+  return new URL(publicMediaURL(story.webFilename, requireBaseURL(baseURL))).pathname
+}
+
+function expectedMediaURLs(baseURL: string | undefined) {
+  const configuredBaseURL = requireBaseURL(baseURL)
+  return new Set(stories.map((story) => publicMediaURL(story.webFilename, configuredBaseURL)))
+}
+
+function allowlistedMediaURL(candidate: string, baseURL: string | undefined) {
+  const url = new URL(candidate, requireBaseURL(baseURL)).href
+  if (!expectedMediaURLs(baseURL).has(url)) {
+    throw new Error(`Rejected non-registry media URL: ${url}`)
   }
-  const url = new URL(route, baseURL)
-  if (url.origin !== 'http://127.0.0.1:4173' || !url.pathname.startsWith('/videos/') || url.search || url.hash) {
-    throw new Error(`Rejected non-local media URL: ${url.href}`)
-  }
-  return url.href
+  return url
 }
 
 function trackMp4Requests(page: Page) {
@@ -27,7 +39,7 @@ async function openDeterministicApp(page: Page) {
   await page.addInitScript(() => {
     Math.random = () => 0
   })
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByRole('heading', { name: 'Historias que nos hacen pensar' })).toBeVisible()
 }
 
@@ -47,7 +59,7 @@ async function expectWithinViewport(locator: Locator) {
 async function expectReleasedMedia(
   handle: ElementHandle<HTMLVideoElement>,
   context: string,
-  expectedRoute: string,
+  expectedURL: string,
 ) {
   await expect.poll(async () => handle.evaluate((media) => ({
     isConnected: media.isConnected,
@@ -66,8 +78,7 @@ async function expectReleasedMedia(
   })
 
   const currentSrc = await handle.evaluate((media) => media.currentSrc)
-  const expectedUrl = new URL(expectedRoute, 'http://127.0.0.1:4173').href
-  expect([expectedUrl, ''], `${context} may only expose an empty or browser-retained stale currentSrc`).toContain(currentSrc)
+  expect([expectedURL, ''], `${context} may only expose an empty or browser-retained stale currentSrc`).toContain(currentSrc)
   if (currentSrc !== '') {
     console.info(`CLEANUP ${context}: currentSrc retains the prior URL after load(), but HAVE_NOTHING and non-loading prove it is not active`)
   }
@@ -78,11 +89,11 @@ async function spinNext(page: Page, discovered: number) {
   await expect(page.getByLabel(`${discovered} de 12 historias descubiertas`)).toBeVisible()
 }
 
-async function openSelectedVideo(page: Page, storyIndex: number) {
+async function openSelectedVideo(page: Page, storyIndex: number, baseURL: string | undefined) {
   const story = stories[storyIndex]
   await page.getByRole('button', { name: 'VER VIDEO' }).click()
   const video = page.getByLabel(`Video de la historia ${story.id}: ${story.phrase}`)
-  await expect(video).toHaveAttribute('src', story.videoUrl)
+  await expect(video).toHaveAttribute('src', expectedMediaPath(story, baseURL))
   await video.evaluate(async (element) => {
     const media = element as HTMLVideoElement
     media.muted = true
@@ -160,14 +171,15 @@ test.describe('cross-browser compatibility', () => {
     await expect(page.getByRole('heading', { name: stories[0].phrase })).toBeVisible()
     await expect(page.getByTestId('segment-1')).toHaveAttribute('data-revealed', 'true')
     expect(mp4Requests, 'Spinning must not request MP4 media before VER VIDEO').toEqual([])
-    const { video, handle } = await openSelectedVideo(page, 0)
+    const { video, handle } = await openSelectedVideo(page, 0, baseURL)
     await expect.poll(() => mp4Requests.length, { message: 'VER VIDEO must trigger a media request' }).toBeGreaterThan(0)
-    expect(new Set(mp4Requests)).toEqual(new Set([allowlistedMediaUrl(stories[0].videoUrl, baseURL)]))
+    const selectedMediaURL = publicMediaURL(stories[0].webFilename, requireBaseURL(baseURL))
+    expect(new Set(mp4Requests)).toEqual(new Set([allowlistedMediaURL(selectedMediaURL, baseURL)]))
     await expect.poll(() => video.evaluate((element) => (element as HTMLVideoElement).currentTime)).toBeGreaterThan(0)
 
     await page.getByRole('button', { name: 'CERRAR VIDEO' }).click()
     await expect(page.locator('video')).toHaveCount(0)
-    await expectReleasedMedia(handle, 'Closing the selected video', stories[0].videoUrl)
+    await expectReleasedMedia(handle, 'Closing the selected video', selectedMediaURL)
     await page.getByRole('button', { name: 'REINICIAR RULETA' }).click()
     await expect(page.getByLabel('0 de 12 historias descubiertas')).toBeVisible()
     await expect(page.getByTestId('segment-1')).toHaveAttribute('data-revealed', 'false')
@@ -215,7 +227,7 @@ test.describe('HTTP media registry', () => {
       expect(story.videoUrl).toBe(`/videos/${story.webFilename}`)
       expect(seen.has(story.videoUrl)).toBe(false)
       seen.add(story.videoUrl)
-      const mediaUrl = allowlistedMediaUrl(story.videoUrl, baseURL)
+      const mediaUrl = allowlistedMediaURL(publicMediaURL(story.webFilename, requireBaseURL(baseURL)), baseURL)
 
       const full = await request.get(mediaUrl)
       expect(full.status(), `${story.videoUrl} full response must be exactly HTTP 200`).toBe(200)
@@ -233,7 +245,7 @@ test.describe('HTTP media registry', () => {
 })
 
 test.describe('full Chrome media lifecycle', () => {
-  test('plays all twelve without repeats and closes each resource before the next', async ({ page }, testInfo) => {
+  test('plays all twelve without repeats and closes each resource before the next', async ({ page, baseURL }, testInfo) => {
     test.skip(testInfo.project.name !== 'chrome', 'The exhaustive sequential run is Chrome-specific')
     test.setTimeout(180_000)
     await openDeterministicApp(page)
@@ -242,7 +254,7 @@ test.describe('full Chrome media lifecycle', () => {
     for (const [index, story] of stories.entries()) {
       await spinNext(page, index + 1)
       await expect(page.getByRole('heading', { name: story.phrase })).toBeVisible()
-      const { video, handle } = await openSelectedVideo(page, index)
+      const { video, handle } = await openSelectedVideo(page, index, baseURL)
       observedUrls.push(await video.getAttribute('src') ?? '')
       const evidence = await observePlayback(video)
       const evidenceDescription = `${story.videoUrl}; duration=${evidence.duration}; frame=${evidence.frameEvidence}; audio=${evidence.audioEvidence}`
@@ -263,24 +275,32 @@ test.describe('full Chrome media lifecycle', () => {
       await page.getByRole('button', { name: 'CERRAR VIDEO' }).click()
       await expect(page.locator('video')).toHaveCount(0)
       await expect(page.locator('video[src]')).toHaveCount(0)
-      await expectReleasedMedia(handle, `Closing story ${story.id}`, story.videoUrl)
+      await expectReleasedMedia(
+        handle,
+        `Closing story ${story.id}`,
+        publicMediaURL(story.webFilename, requireBaseURL(baseURL)),
+      )
     }
 
-    expect(observedUrls).toEqual(stories.map((story) => story.videoUrl))
+    expect(observedUrls).toEqual(stories.map((story) => expectedMediaPath(story, baseURL)))
     expect(new Set(observedUrls).size).toBe(12)
   })
 
-  test('switching stories releases the old URL and loads only the new URL', async ({ page }, testInfo) => {
+  test('switching stories releases the old URL and loads only the new URL', async ({ page, baseURL }, testInfo) => {
     test.skip(testInfo.project.name !== 'chrome', 'Detailed switching lifecycle is covered in Chrome')
     await openDeterministicApp(page)
     await spinNext(page, 1)
-    const first = await openSelectedVideo(page, 0)
+    const first = await openSelectedVideo(page, 0, baseURL)
     await page.getByRole('button', { name: 'GIRAR RULETA' }).click()
     await expect(page.locator('video')).toHaveCount(0)
-    await expectReleasedMedia(first.handle, 'Switching away from story 1', stories[0].videoUrl)
+    await expectReleasedMedia(
+      first.handle,
+      'Switching away from story 1',
+      publicMediaURL(stories[0].webFilename, requireBaseURL(baseURL)),
+    )
     await expect(page.getByLabel('2 de 12 historias descubiertas')).toBeVisible()
-    const second = await openSelectedVideo(page, 1)
-    await expect(second.video).toHaveAttribute('src', stories[1].videoUrl)
-    await expect(second.video).not.toHaveAttribute('src', stories[0].videoUrl)
+    const second = await openSelectedVideo(page, 1, baseURL)
+    await expect(second.video).toHaveAttribute('src', expectedMediaPath(stories[1], baseURL))
+    await expect(second.video).not.toHaveAttribute('src', expectedMediaPath(stories[0], baseURL))
   })
 })

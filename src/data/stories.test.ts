@@ -16,6 +16,21 @@ const expectedMapping = [
   [12, 'Aprender sin suficiente acompañamiento', 'La_barrera_invisible_de_los_deberes.mp4', '12-la-barrera-invisible-de-los-deberes.mp4'],
 ] as const
 
+const expectedHashes = [
+  '65087b92e433094bab357bd785b6875823d794d450ea93e81b8f979ccc8719cb',
+  'ec7542131afaf56ec46b5c0a0905b95a1076a72f060137ab121516afa618eb27',
+  'a422a5b19fe451f708253bf2c7df6dd4370e8c71f84b3b9cd4a3092dd654c194',
+  '5a1f28d88f411104aed80e2b80c5fc587694f96910e3d1c35d51202a50d11a34',
+  '6c1a6658f34b3d36c42ff0c06ebce13985df8b72e8074b170d4cd21e4061dad9',
+  '1d787a6c3298d4f756e01fced134931037a491623254a763c5186a7f183a93ea',
+  '40274c75ee37471a69e8a285bb8017203036e984c5c0f36b97b1ac8f6b4dbf76',
+  '9d982f473e70d35755087593600cddbd3480b595b4a72d96bdfd2702d228ec2b',
+  'bf8507695195ab365cf98ff56463d35f4e6f4b995ca0b7895eacc0b052ad749c',
+  '80a7ac6752225f4f9a8d5716797731917582b9687d099cdd546540d0112d53d0',
+  '6f0fc189e3754a700d9ec513f165694ed3bb5a0c117944f82a0a7bab4b5305eb',
+  '750bc3a295ccdc2d55aaaaf748c8ee0bc127c193940dda7939a229933f875fd5',
+] as const
+
 describe('story registry', () => {
   it('contains exactly 12 unique IDs, phrases, and URLs', () => {
     expect(stories).toHaveLength(12)
@@ -36,7 +51,8 @@ describe('story registry', () => {
     ).toEqual(expectedMapping.map(([id, phrase, source, web]) => [id, phrase, source, web, `/videos/${web}`]))
   })
 
-  it('uses lowercase SHA-256 values', () => {
+  it('uses the exact lowercase SHA-256 values', () => {
+    expect(stories.map(({ sha256 }) => sha256)).toEqual(expectedHashes)
     for (const story of stories) {
       expect(story.sha256).toMatch(/^[a-f0-9]{64}$/)
     }
