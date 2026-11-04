@@ -25,7 +25,7 @@ const SEGMENT_COLORS = [
   '#be123c',
   '#6d28d9',
 ] as const
-const REVEALED_COLOR = '#dc2626'
+const REVEALED_COLOR = '#7f1d1d'
 
 export interface RouletteProps {
   readonly random?: () => number
@@ -86,6 +86,7 @@ function SegmentLabel({ story, revealed }: { story: Story; revealed: boolean }) 
   return (
     <text
       className="segment-phrase"
+      data-testid={`segment-phrase-${story.id}`}
       aria-label={story.phrase}
       textAnchor="middle"
       transform={`rotate(${angle} ${CENTER} ${CENTER})`}
@@ -218,6 +219,7 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
                   >
                     <path
                       d={segmentPath(index)}
+                      className={revealed ? 'segment-fill segment-fill-revealed' : 'segment-fill'}
                       fill={revealed ? REVEALED_COLOR : SEGMENT_COLORS[index]}
                       stroke="#ffffff"
                       strokeWidth="2"

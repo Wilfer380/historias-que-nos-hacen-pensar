@@ -100,18 +100,18 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `77d3442` (`test(e2e): verify roulette and all media`).
   - Independent verification initially found coverage gaps; two correction rounds closed them, and final re-verification reported no findings.
 
-- [ ] **T5 — Complete range-capable public media delivery**
-  - Keep the app on the authorized public GitHub Pages URL and route only the twelve allowlisted MP4s through the user-authorized Cloudflare Worker.
-  - Preserve bytes while enforcing `video/mp4`, HTTP 200/206/416 semantics, range forwarding, CORS, strict allowlisting, and streaming without full-file buffering.
-  - Configure the GitHub Pages build with the deployed Worker media base and repeat all production route/playback checks.
-  - Checks: public HTTPS app works outside localhost; all twelve Worker routes match hashes, return correct range responses, and pass the production browser suite.
+- [ ] **T5 — Complete GitHub-only public media delivery**
+  - Keep the app on the authorized public GitHub Pages URL and load only the twelve exact MP4s from the repository’s fixed `raw.githubusercontent.com` media base.
+  - Preserve byte-identical files and require GitHub Raw HTTP 206 ranges, Content-Range/Length, Accept-Ranges, and CORS; accept its honest `application/octet-stream` response only for that exact allowlisted authority.
+  - Keep local development on same-origin `/videos/` with `video/mp4`; production configuration is hardcoded in the Pages workflow rather than a mutable repository variable.
+  - Checks pending final redeploy: public HTTPS app works outside localhost; all twelve raw GitHub routes preserve exact mapping/ranges and pass the production browser suite.
 
-- [ ] **T6 — Polish projected presentation and Teams participation**
-  - Scroll and focus the integrated player immediately after “VER VIDEO” so no manual scrolling is needed.
-  - Replace the saturated revealed red with a darker accessible treatment and ensure every revealed phrase remains legible.
-  - Add an original education/community-themed full-page background with an overlay that preserves contrast and performance.
-  - Document the Microsoft Teams grant-control/revoke-control presentation flow; the app remains one projected browser session with no participant links.
-  - Checks: keyboard focus and scroll behavior, contrast/readability, desktop/mobile/Teams viewport rendering, and existing roulette/video behavior all pass.
+- [x] **T6 — Polish projected presentation and Teams participation**
+  - The integrated player now receives focus and scrolls into view immediately after “VER VIDEO”, respecting reduced motion.
+  - Replaced the saturated revealed red with an accessible burgundy treatment and stronger readable phrase styling.
+  - Added an original locally bundled education/community SVG background with a contrast-preserving blue overlay.
+  - Documented the Microsoft Teams named grant-control/revoke-control flow and independent behavior of the shareable public link.
+  - Checks passed: 23 component/unit tests, build, 12 media hashes, and Playwright 12 passed/6 deliberate skips across desktop/mobile browsers.
 
 - [ ] **T7 — Final public HTTPS verification and handoff**
   - Validate the final public page and all twelve HTTPS MP4 URLs from clean Chrome, Edge, and Firefox contexts.
@@ -161,4 +161,4 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 
 ## Next Step
 
-Complete T5 by independently verifying and deploying the strict Cloudflare media Worker, configure the Pages media base, and repeat production checks. Then implement T6 presentation polish and the documented Microsoft Teams remote-control flow before final T7 public verification.
+Complete the final GitHub-only commit and deploy it to `main`, then execute T7 production verification against the public Pages URL with the exact raw GitHub media base.

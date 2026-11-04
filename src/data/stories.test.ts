@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeMediaBaseURL, stories } from './stories'
+import { RAW_GITHUB_MEDIA_BASE_URL, normalizeMediaBaseURL, stories } from './stories'
 
 const expectedMapping = [
   [1, 'El largo camino hacia la escuela', 'El_barro_antes_de_la_pizarra.mp4', '01-el-barro-antes-de-la-pizarra.mp4'],
@@ -51,20 +51,33 @@ describe('story registry', () => {
     ).toEqual(expectedMapping.map(([id, phrase, source, web]) => [id, phrase, source, web, `/videos/${web}`]))
   })
 
-  it('normalizes one trusted media base into exactly twelve canonical Worker URLs', () => {
-    const base = normalizeMediaBaseURL('https://HISTORIAS-VIDEOS.Example.workers.dev')
-    const urls = stories.map(({ webFilename }) => `${base}videos/${webFilename}`)
-    expect(base).toBe('https://historias-videos.example.workers.dev/')
+  it('normalizes only the exact raw GitHub media base into twelve allowlisted URLs', () => {
+    const base = normalizeMediaBaseURL(RAW_GITHUB_MEDIA_BASE_URL.slice(0, -1))
+    const urls = stories.map(({ webFilename }) => `${base}${webFilename}`)
+    expect(base).toBe(RAW_GITHUB_MEDIA_BASE_URL)
     expect(urls).toHaveLength(12)
     expect(new Set(urls)).toHaveLength(12)
-    expect(urls.every((url) => /^https:\/\/historias-videos\.example\.workers\.dev\/videos\/\d{2}-[a-z0-9-]+\.mp4$/.test(url))).toBe(true)
+    expect(urls).toEqual(expectedMapping.map(([, , , web]) => `${RAW_GITHUB_MEDIA_BASE_URL}${web}`))
   })
 
-  it('keeps the local fallback but rejects configured values outside Worker authority', () => {
-    expect(normalizeMediaBaseURL(undefined, '/videos-base/')).toBe('/videos-base/')
-    expect(() => normalizeMediaBaseURL('/relative/')).toThrow(/absolute HTTPS Worker root URL/)
-    expect(() => normalizeMediaBaseURL('https://user:secret@historias-videos.example.workers.dev/')).toThrow(/without credentials/)
-    expect(() => normalizeMediaBaseURL('https://historias-videos.example.workers.dev/?target=other')).toThrow(/without credentials/)
+  it('keeps same-origin local media but rejects every configured alternative loudly', () => {
+    expect(normalizeMediaBaseURL(undefined)).toBe('/videos/')
+    expect(normalizeMediaBaseURL(undefined, '/historias-que-nos-hacen-pensar/')).toBe('/historias-que-nos-hacen-pensar/videos/')
+
+    for (const invalid of [
+      '',
+      '/videos/',
+      'http://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/',
+      'https://github.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/',
+      'https://raw.githubusercontent.com:443/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/',
+      'https://user:secret@raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/',
+      'https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/dev/public/videos/',
+      'https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/videos/',
+      `${RAW_GITHUB_MEDIA_BASE_URL}?download=1`,
+      `${RAW_GITHUB_MEDIA_BASE_URL}#media`,
+    ]) {
+      expect(() => normalizeMediaBaseURL(invalid), invalid).toThrow(`VITE_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`)
+    }
   })
 
   it('uses the exact lowercase SHA-256 values', () => {

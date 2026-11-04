@@ -15,14 +15,21 @@ function releaseVideo(video: HTMLVideoElement) {
 }
 
 export function VideoPlayer({ story, onClose }: VideoPlayerProps) {
+  const playerRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const playbackRejected = useRef(false)
   const mediaFailed = useRef(false)
   const [status, setStatus] = useState<PlayerStatus>('loading')
 
   useEffect(() => {
+    const player = playerRef.current
     const video = videoRef.current
-    if (!video) return
+    if (!player || !video) return
+
+    player.focus({ preventScroll: true })
+    const reducedMotion =
+      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    player.scrollIntoView?.({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' })
 
     let active = true
     void video.play().catch(() => {
@@ -53,7 +60,13 @@ export function VideoPlayer({ story, onClose }: VideoPlayerProps) {
   }
 
   return (
-    <section className="video-player" aria-labelledby="video-player-heading">
+    <section
+      ref={playerRef}
+      className="video-player"
+      aria-labelledby="video-player-heading"
+      tabIndex={-1}
+      data-testid="video-player-region"
+    >
       <div className="video-player-heading">
         <div>
           <p className="result-kicker">Historia {story.id}</p>

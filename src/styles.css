@@ -14,10 +14,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
   background:
-    radial-gradient(circle at 12% 15%, rgb(191 219 254 / 75%), transparent 31rem),
-    radial-gradient(circle at 88% 82%, rgb(254 202 202 / 55%), transparent 28rem),
-    #f8fafc;
+    linear-gradient(125deg, rgb(5 20 52 / 88%), rgb(13 54 105 / 78%)),
+    url("./assets/education-community-bg.svg") center / cover no-repeat,
+    #0b1f46;
 }
 
 button {
@@ -69,16 +70,20 @@ button:focus-visible {
 h1 {
   max-width: 13ch;
   margin: 0.65rem 0 1rem;
-  color: #172554;
+  color: #fff;
   font-size: clamp(2.25rem, 5vw, 4.8rem);
   line-height: 0.98;
   letter-spacing: -0.045em;
 }
 
+.roulette-copy .eyebrow {
+  color: #fecaca;
+}
+
 .intro {
   max-width: 38rem;
   margin: 0;
-  color: #475569;
+  color: #dbeafe;
   font-size: clamp(1rem, 1.5vw, 1.2rem);
   line-height: 1.65;
 }
@@ -89,15 +94,15 @@ h1 {
   align-items: baseline;
   margin: 1.25rem 0 0;
   padding: 0.55rem 0.9rem;
-  border: 1px solid #bfdbfe;
+  border: 1px solid rgb(191 219 254 / 65%);
   border-radius: 999px;
-  color: #334155;
-  background: rgb(255 255 255 / 72%);
+  color: #eff6ff;
+  background: rgb(15 23 42 / 58%);
   font-size: 0.9rem;
 }
 
 .progress strong {
-  color: #1d4ed8;
+  color: #fde68a;
   font-size: 1.15rem;
 }
 
@@ -144,12 +149,17 @@ h1 {
 
 .segment-phrase {
   fill: #fff;
-  font-size: 7.4px;
-  font-weight: 800;
-  letter-spacing: -0.1px;
-  paint-order: stroke;
-  stroke: rgb(127 29 29 / 65%);
-  stroke-width: 1.5px;
+  font-size: 8.2px;
+  font-weight: 900;
+  letter-spacing: 0;
+  paint-order: stroke fill;
+  stroke: rgb(15 23 42 / 88%);
+  stroke-linejoin: round;
+  stroke-width: 2px;
+} 
+
+.segment-fill-revealed {
+  fill: #7f1d1d;
 }
 
 .wheel-hub {
@@ -239,7 +249,7 @@ h1 {
 }
 
 .result-panel-active {
-  border-left-color: #dc2626;
+  border-left-color: #7f1d1d;
 }
 
 .result-panel h2 {
@@ -269,7 +279,12 @@ h1 {
   border: 1px solid #bfdbfe;
   border-radius: 1rem;
   background: #fff;
-  box-shadow: 0 18px 45px rgb(15 23 42 / 14%);
+  box-shadow: 0 18px 45px rgb(15 23 42 / 20%);
+}
+
+.video-player:focus-visible {
+  outline: 4px solid #facc15;
+  outline-offset: 5px;
 }
 
 .video-player-heading,

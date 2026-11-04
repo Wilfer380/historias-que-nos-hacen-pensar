@@ -8,8 +8,15 @@ const story = stories[0]
 let playMock: ReturnType<typeof vi.spyOn>
 let pauseMock: ReturnType<typeof vi.spyOn>
 let loadMock: ReturnType<typeof vi.spyOn>
+let scrollIntoViewMock: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
+  scrollIntoViewMock = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoViewMock,
+  })
+  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
   playMock = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
   pauseMock = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined)
   loadMock = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined)
@@ -18,6 +25,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('VideoPlayer', () => {
@@ -30,6 +38,23 @@ describe('VideoPlayer', () => {
     expect(video).toHaveAttribute('controls')
     expect(video).toHaveAttribute('playsinline')
     expect(playMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('focuses and smoothly scrolls the mounted player region into view', () => {
+    render(<VideoPlayer story={story} onClose={vi.fn()} />)
+
+    const region = screen.getByTestId('video-player-region')
+    expect(region).toHaveFocus()
+    expect(region).toHaveAttribute('tabindex', '-1')
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' })
+  })
+
+  it('scrolls immediately when reduced motion is requested', () => {
+    vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as MediaQueryList)
+
+    render(<VideoPlayer story={story} onClose={vi.fn()} />)
+
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'auto', block: 'nearest' })
   })
 
   it('keeps controls available and explains how to continue when playback is rejected', async () => {

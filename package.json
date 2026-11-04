@@ -8,9 +8,7 @@
     "build": "tsc -b && vite build",
     "test": "vitest --exclude e2e/**",
     "test:e2e": "set PLAYWRIGHT_BROWSERS_PATH=0&& playwright test",
-    "verify:media": "tsx scripts/verify-media.ts",
-    "worker:dev": "wrangler dev",
-    "worker:dry-run": "wrangler deploy --dry-run"
+    "verify:media": "tsx scripts/verify-media.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -29,7 +27,6 @@
     "jsdom": "latest",
     "tsx": "latest",
     "typescript": "latest",
-    "vitest": "latest",
-    "wrangler": "^4.157.0"
+    "vitest": "latest"
   }
 }

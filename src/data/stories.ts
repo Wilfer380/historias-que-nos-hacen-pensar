@@ -16,44 +16,48 @@ type MediaEnv = { readonly BASE_URL?: string; readonly VITE_MEDIA_BASE_URL?: str
 const viteEnv = (import.meta as ImportMeta & { readonly env?: MediaEnv }).env
 const baseUrl = viteEnv?.BASE_URL ?? '/'
 
-export function normalizeMediaBaseURL(value: string | undefined, fallback = '/') {
-  if (value === undefined) return fallback
+export const RAW_GITHUB_MEDIA_BASE_URL = 'https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/'
+
+function localMediaBaseURL(fallback: string): `${string}videos/` {
+  return `${fallback.replace(/\/+$/, '')}/videos/`
+}
+
+export function normalizeMediaBaseURL(value: string | undefined, fallback = '/'): `${string}videos/` {
+  if (value === undefined) return localMediaBaseURL(fallback)
   const candidate = value.trim()
   const authority = candidate.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1]
   const hostnameAndPort = authority?.split('@').at(-1)
 
-  if (/[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
-    throw new Error('VITE_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  if (!candidate || /[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
+    throw new Error(`VITE_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`)
   }
 
   let url: URL
   try {
     url = new URL(candidate)
   } catch (error) {
-    throw new Error(`VITE_MEDIA_BASE_URL must be an absolute HTTPS Worker root URL: ${candidate}`, { cause: error })
+    throw new Error(`VITE_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`, { cause: error })
   }
 
-  const workerHostname = /^historias-videos\.([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.workers\.dev$/
   if (
     url.protocol !== 'https:'
-    || !workerHostname.test(url.hostname)
     || url.username
     || url.password
     || url.port
-    || url.pathname !== '/'
     || url.search
     || url.hash
+    || ![RAW_GITHUB_MEDIA_BASE_URL, RAW_GITHUB_MEDIA_BASE_URL.slice(0, -1)].includes(url.href)
   ) {
-    throw new Error('VITE_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+    throw new Error(`VITE_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`)
   }
 
-  return url.href
+  return RAW_GITHUB_MEDIA_BASE_URL
 }
 
 const mediaBaseUrl = normalizeMediaBaseURL(viteEnv?.VITE_MEDIA_BASE_URL, baseUrl)
 
 function mediaUrl(webFilename: `${string}.mp4`): Story['videoUrl'] {
-  return `${mediaBaseUrl}videos/${webFilename}`
+  return `${mediaBaseUrl}${webFilename}`
 }
 
 export const stories = [

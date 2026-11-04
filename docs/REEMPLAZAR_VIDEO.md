@@ -5,17 +5,17 @@ Este procedimiento protege la correspondencia entre historia, archivo y hash. No
 ## Antes de empezar
 
 1. Confirmá cuál de las doce historias se reemplazará.
-2. Conservá el archivo original autorizado fuera de cualquier herramienta que pueda modificarlo automáticamente.
+2. Conservá el archivo original autorizado fuera de cualquier herramienta que pueda modificarlo.
 3. Identificá su nombre web canónico en `src/data/stories.ts`.
-4. Trabajá solo sobre la copia correspondiente en `public/videos/`; no sobrescribas el original fuente.
+4. Trabajá solo sobre la copia correspondiente en `public/videos/`.
 
-El nombre canónico mantiene el formato numerado y sin espacios, por ejemplo `01-el-barro-antes-de-la-pizarra.mp4`. Si el reemplazo cambia la historia o el nombre, la frase, `sourceFilename`, `webFilename`, URL, allowlist de `worker/index.ts` y documentación deben seguir sincronizados. El Worker no acepta ningún nombre fuera de sus doce entradas exactas.
+El nombre canónico mantiene el formato numerado y sin espacios, por ejemplo `01-el-barro-antes-de-la-pizarra.mp4`. Si cambia la historia o el nombre, la frase, `sourceFilename`, `webFilename`, URL, pruebas y documentación deben seguir sincronizados. No agregues aliases, parámetros ni rutas genéricas: producción admite exactamente los doce nombres del registro.
 
 ## Procedimiento
 
 ### 1. Reemplazá la copia canónica
 
-Copiá el nuevo MP4 autorizado a `public/videos/<nombre-canónico>.mp4`. Evitá abrir y guardar el archivo con editores multimedia: una operación de guardado puede cambiar sus bytes aunque el video parezca igual.
+Copiá el MP4 autorizado a `public/videos/<nombre-canónico>.mp4`. Evitá abrirlo y guardarlo con editores multimedia: el guardado puede cambiar los bytes aunque el video parezca igual.
 
 ### 2. Calculá el SHA-256
 
@@ -43,7 +43,15 @@ Actualizá la única entrada correspondiente en `src/data/stories.ts`:
 - `sha256`: hash recién calculado;
 - `phrase`: solo si el contenido aprobado exige cambiar la historia.
 
-Actualizá también las expectativas exactas en `src/data/stories.test.ts`. Si cambió `webFilename`, reemplazá exactamente el mismo nombre en `worker/index.ts`; no agregues aliases, parámetros ni rutas genéricas. No modifiques otras correspondencias ni hashes.
+Actualizá también las expectativas exactas en `src/data/stories.test.ts`. No modifiques las otras once correspondencias ni sus hashes.
+
+La base de producción permanece fija en:
+
+```text
+https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/
+```
+
+No cambies rama, repositorio, autoridad ni ruta para publicar un reemplazo.
 
 ### 4. Ejecutá todas las comprobaciones
 
@@ -54,30 +62,27 @@ npm test -- --run
 npm run build
 npm run verify:media
 npm run test:e2e
-npm run build -- --base=/historias-que-nos-hacen-pensar/
-npm exec wrangler -- deploy --dry-run
+set VITE_MEDIA_BASE_URL=https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/&& npm run build -- --base=/historias-que-nos-hacen-pensar/
 ```
 
-`verify:media` debe informar doce MP4 verificados. Además, inspeccioná `dist/` para confirmar que:
+Inspeccioná además `dist/` para confirmar que contiene la base exacta de GitHub Raw y los doce nombres canónicos, mientras un build local sin variable conserva `/videos/...`.
 
-- existen los doce archivos en `dist/videos/`;
-- los hashes de las copias construidas coinciden con `public/videos/`;
-- `dist/index.html`, sus recursos y las URL MP4 del bundle usan `/historias-que-nos-hacen-pensar/` en la compilación de Pages.
+### 5. Revisá, desplegá y verificá
 
-### 5. Revisá y desplegá
+Revisá el diff para confirmar que solo cambió el archivo previsto y sus metadatos sincronizados. GitHub Actions publica la aplicación en GitHub Pages desde `main`; no subas manualmente una copia generada.
 
-Revisá el diff para confirmar que solo cambió el archivo canónico previsto y sus metadatos sincronizados. El despliegue ocurre por GitHub Actions desde `main`; no publiques una copia generada manualmente sobre los videos originales.
-
-El dry-run solo valida el empaquetado: no despliega ni autentica el Worker. El despliegue de Cloudflare sigue pendiente hasta que la persona responsable lo ejecute y configure `VITE_MEDIA_BASE_URL` en las variables de GitHub Actions. Si querés probar la URL pública del Worker con Playwright, definí `PLAYWRIGHT_MEDIA_BASE_URL` con el origen HTTPS absoluto; sin esa variable, las pruebas conservan el modo local de mismo origen.
-
-Después del despliegue, verificá desde un navegador limpio:
+Después del redespliegue, verificá desde un navegador limpio:
 
 - carga HTTPS de la aplicación;
-- ausencia de solicitudes MP4 antes de pulsar **VER VIDEO**;
-- URL exacta de la historia reemplazada;
-- respuesta `video/mp4`, `Accept-Ranges: bytes`, CORS para Pages y soporte real de respuestas 206 y 416;
-- imagen, audio y avance de reproducción;
-- funcionamiento de las otras once historias.
+- cero solicitudes MP4 antes de pulsar **VER VIDEO**;
+- URL exacta de la historia reemplazada bajo la base fija;
+- respuesta completa `200` y rango real `206`;
+- `Accept-Ranges: bytes`, `Content-Range`, `Content-Length` y CORS `*`;
+- `Content-Type: application/octet-stream`, que es la limitación conocida de GitHub Raw;
+- imagen, audio, frames y avance de reproducción;
+- funcionamiento y liberación de recursos de las otras once historias en Chrome, Edge y Firefox.
+
+Como referencia, antes de este cambio el video 1 reprodujo directamente en los tres navegadores con 720×1280, duración 58.351746 s, avance mayor que 0.2 s, `readyState` 4, una pista de audio y ningún error multimedia. No uses esa evidencia para afirmar que la suite pública completa pasó después de un redespliegue nuevo.
 
 ## Regla de seguridad
 

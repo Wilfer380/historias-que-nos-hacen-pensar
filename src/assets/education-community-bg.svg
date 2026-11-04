@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Education and community background</title>
+  <desc id="desc">Abstract books, learning paths, and connected people gathered around shared opportunities.</desc>
+  <rect width="1600" height="1000" fill="#12366b"/>
+  <path d="M-80 860C220 620 360 920 650 680S1120 390 1680 570" fill="none" stroke="#80b7df" stroke-width="70" opacity=".38"/>
+  <path d="M-60 920C260 710 430 980 720 740S1180 470 1660 650" fill="none" stroke="#f1c453" stroke-width="16" opacity=".5"/>
+  <g fill="none" stroke="#dbeafe" stroke-width="14" opacity=".42">
+    <path d="M150 150h250c44 0 80 36 80 80v260H230c-44 0-80-36-80-80z"/>
+    <path d="M810 150h250c44 0 80 36 80 80v260H890c-44 0-80-36-80-80z" transform="matrix(-1 0 0 1 1950 0)"/>
+    <path d="M480 230v260c55-50 130-60 235-20V210c-98-34-174-27-235 20z"/>
+    <path d="M480 230v260c-55-50-130-60-235-20V210c98-34 174-27 235 20z"/>
+  </g>
+  <g fill="#f8d477" opacity=".58">
+    <circle cx="1120" cy="220" r="48"/>
+    <circle cx="1260" cy="285" r="42"/>
+    <circle cx="1400" cy="205" r="46"/>
+  </g>
+  <g fill="none" stroke="#f8fafc" stroke-linecap="round" stroke-width="24" opacity=".45">
+    <path d="M1120 292v145m-70-55 70-48 68 48"/>
+    <path d="M1260 350v145m-65-52 65-46 64 46"/>
+    <path d="M1400 275v152m-68-56 68-48 70 48"/>
+    <path d="M1120 438c105 76 185 76 280-10"/>
+  </g>
+  <g fill="#bfdbfe" opacity=".3">
+    <circle cx="210" cy="760" r="18"/>
+    <circle cx="340" cy="690" r="14"/>
+    <circle cx="525" cy="765" r="20"/>
+    <circle cx="760" cy="620" r="16"/>
+    <circle cx="930" cy="545" r="18"/>
+  </g>
+</svg>

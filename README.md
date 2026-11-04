@@ -4,11 +4,19 @@ Aplicación web en React y TypeScript para descubrir, sin repeticiones, doce his
 
 ## Estado de publicación
 
-El repositorio está preparado para GitHub Pages en `Wilfer380/historias-que-nos-hacen-pensar`.
+La aplicación se publica únicamente con GitHub Pages desde `Wilfer380/historias-que-nos-hacen-pensar`.
 
-**URL pública prevista (pendiente de despliegue y verificación):** `https://wilfer380.github.io/historias-que-nos-hacen-pensar/`
+**URL pública prevista (pendiente de redespliegue y verificación completa):** `https://wilfer380.github.io/historias-que-nos-hacen-pensar/`
 
-No se considera publicada hasta que el workflow se ejecute en `main` y se comprueben la página y las doce rutas MP4 desde un navegador limpio. El Worker de Cloudflare que entregará los videos también está **pendiente de despliegue y autenticación**; este repositorio solo deja preparada y probada su implementación.
+Los MP4 de producción se sirven directamente desde esta base pública e inmutable en la configuración:
+
+```text
+https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/
+```
+
+GitHub Raw respondió con rangos reales `206`, `Content-Range` y `Content-Length` válidos, `Accept-Ranges: bytes` y CORS `*`. Su limitación conocida es que entrega los MP4 como `Content-Type: application/octet-stream`, no como `video/mp4`.
+
+La compatibilidad directa se comprobó con el video 1 en Chrome, Edge y Firefox: resolución 720×1280, duración 58.351746 s, avance mayor que 0.2 s, `readyState` 4, una pista de audio y ningún error multimedia. Esta evidencia no equivale a afirmar que la suite pública final de las doce historias pasó después del redespliegue; esa comprobación sigue pendiente.
 
 ## Requisitos
 
@@ -25,29 +33,19 @@ npm ci
 npm run dev
 ```
 
-El desarrollo local usa `/` como base. Por eso las URL del registro se mantienen como `/videos/...` en desarrollo, pruebas unitarias y ejecución directa desde Node.
+Sin `VITE_MEDIA_BASE_URL`, desarrollo, pruebas y builds manuales conservan rutas del mismo origen `/videos/...` (o la base de Vite seguida de `videos/...`). Si se define, la variable solo admite la base exacta de GitHub Raw indicada arriba; se rechazan otros esquemas, autoridades, ramas, rutas, puertos, credenciales, queries y fragmentos.
 
-`VITE_MEDIA_BASE_URL` permite que un build use un origen HTTP(S) absoluto para los videos. La base se normaliza con una barra final; no admite credenciales, query ni fragmento. Si la variable falta o está vacía, el comportamiento continúa siendo exactamente el mismo: `${BASE_URL}videos/...`. Para las pruebas públicas, `PLAYWRIGHT_MEDIA_BASE_URL` acepta la misma clase de base absoluta; si falta, Playwright deriva las rutas `/videos/...` del origen de la aplicación.
+`PLAYWRIGHT_MEDIA_BASE_URL` aplica la misma regla. Si no está definida, Playwright prueba `/videos/...` en el origen de la aplicación.
 
 ## Registro e integridad de medios
 
-`src/data/stories.ts` es la fuente central de las doce correspondencias. Cada entrada contiene:
+`src/data/stories.ts` es la fuente central de las doce correspondencias. Cada entrada contiene identificador, frase, nombre original, nombre web canónico, URL calculada y SHA-256 esperado. La allowlist permanece limitada exactamente a esos doce nombres.
 
-- identificador y frase;
-- nombre del archivo original;
-- nombre web canónico;
-- URL calculada a partir de la base de Vite;
-- SHA-256 esperado.
-
-Los archivos publicados están en `public/videos/`. No se transcodifican: el nombre puede ser canónico, pero sus bytes deben seguir siendo idénticos a los del original autorizado.
-
-Verificá el conjunto y sus hashes con:
+Los archivos están en `public/videos/` y no se transcodifican. Verificá nombres y hashes con:
 
 ```bash
 npm run verify:media
 ```
-
-El comando falla si falta o sobra un MP4, o si cualquier SHA-256 difiere del registro.
 
 ## Comprobaciones locales
 
@@ -56,34 +54,33 @@ npm test -- --run
 npm run build
 npm run verify:media
 npm run test:e2e
-npm run build -- --base=/historias-que-nos-hacen-pensar/
+set VITE_MEDIA_BASE_URL=https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/&& npm run build -- --base=/historias-que-nos-hacen-pensar/
 ```
 
-La última orden reproduce la base de producción. Sin `VITE_MEDIA_BASE_URL`, el resultado queda en `dist/` y las URL MP4 del bundle empiezan con `/historias-que-nos-hacen-pensar/`. Con la variable configurada, solo las doce URL MP4 apuntan a `${VITE_MEDIA_BASE_URL}/videos/<nombre-canónico>`; los recursos de la aplicación siguen usando la base de Pages.
+La E2E exige `video/mp4` para el servidor local. Solo acepta `application/octet-stream` cuando cada URL pertenece a la allowlist exacta bajo la base exacta de GitHub Raw. También comprueba respuestas completas `200`, rangos `206`, cabeceras, ausencia de carga antes del clic, URL seleccionada, reproducción, frames, audio, tiempo, liberación de recursos y los tres navegadores.
+
+## Uso con Microsoft Teams
+
+Para una dinámica guiada, la persona presentadora comparte en Teams la ventana del navegador con la aplicación, selecciona a una persona participante en los controles de Teams y le concede el control. Ese permiso continúa hasta que la persona presentadora lo revoca o detiene el control. La aplicación no lee ni muestra los nombres de participantes de Teams: el flujo de selección y permisos pertenece por completo a Teams.
+
+El enlace público también se puede compartir por separado. En ese caso, cada navegador mantiene su propio estado independiente de la ruleta; los giros, historias descubiertas y videos abiertos no se sincronizan entre participantes.
 
 ## Despliegue
 
-`.github/workflows/deploy-pages.yml` se activa al enviar cambios a `main` (o manualmente). El workflow:
+`.github/workflows/deploy-pages.yml` se activa en `main` o manualmente. Instala dependencias, ejecuta unitarias, verifica hashes, compila con `/historias-que-nos-hacen-pensar/` y despliega mediante las acciones oficiales de GitHub Pages.
 
-1. instala dependencias reproducibles con `npm ci`;
-2. ejecuta las pruebas unitarias;
-3. verifica los doce hashes;
-4. compila con la base `/historias-que-nos-hacen-pensar/`;
-5. sube `dist/` como artefacto de Pages;
-6. despliega mediante las acciones oficiales de GitHub Pages.
+El workflow fija directamente la base exacta de GitHub Raw; no confía en variables del repositorio. Antes del primer despliegue, configurá **Settings → Pages → Source: GitHub Actions**. No hay infraestructura adicional ni proveedor externo que configurar.
 
-Antes del primer despliegue, el repositorio debe tener **Settings → Pages → Source: GitHub Actions**. El Worker se configura por separado con `wrangler.jsonc` y `worker/index.ts`; solo acepta GET, HEAD y OPTIONS sobre los doce nombres canónicos y usa un upstream fijo de GitHub Raw. No acepta destinos, queries ni nombres arbitrarios, transmite el cuerpo sin cargar el MP4 completo en memoria y conserva las respuestas 200, 206 y 416.
-
-Cuando el Worker haya sido desplegado y validado por la persona responsable de Cloudflare, configurá la variable de repositorio **Settings → Secrets and variables → Actions → Variables → `VITE_MEDIA_BASE_URL`** con su origen HTTPS absoluto, sin `/videos`. El workflow pasa esa variable al build; si no existe, mantiene el fallback seguro de mismo origen. Para validar una publicación sin cambiar el build local:
+Para comprobar la publicación después del redespliegue:
 
 ```bash
 set PLAYWRIGHT_BASE_URL=https://wilfer380.github.io/historias-que-nos-hacen-pensar/
-set PLAYWRIGHT_MEDIA_BASE_URL=https://<worker>.workers.dev/
+set PLAYWRIGHT_MEDIA_BASE_URL=https://raw.githubusercontent.com/Wilfer380/historias-que-nos-hacen-pensar/main/public/videos/
 npm run test:e2e
 ```
 
-Después, verificá externamente el HTTPS, `Content-Type: video/mp4`, `Accept-Ranges: bytes`, una respuesta 206 real, CORS desde `https://wilfer380.github.io`, la carga diferida y la reproducción de los doce videos. También podés comprobar que el Worker empaqueta sin desplegar con `npm exec wrangler -- deploy --dry-run`. No edites este documento para marcar Pages o el Worker como disponibles antes de completar esas comprobaciones.
+No marques la suite pública como aprobada hasta ejecutar esa matriz contra el despliegue nuevo y registrar cualquier diferencia respecto de la evidencia directa ya observada.
 
 ## Reemplazar un video
 
-Seguí el procedimiento seguro de [`docs/REEMPLAZAR_VIDEO.md`](docs/REEMPLAZAR_VIDEO.md). El principio central es reemplazar únicamente la copia canónica autorizada, recalcular el SHA-256, sincronizar el registro y ejecutar todas las comprobaciones antes de desplegar.
+Seguí el procedimiento seguro de [`docs/REEMPLAZAR_VIDEO.md`](docs/REEMPLAZAR_VIDEO.md). Reemplazá únicamente la copia canónica autorizada, recalculá el SHA-256, sincronizá el registro y ejecutá todas las comprobaciones antes de desplegar.

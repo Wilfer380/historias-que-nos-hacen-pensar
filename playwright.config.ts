@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { RAW_GITHUB_MEDIA_BASE_URL } from './src/data/stories'
 
 const chromePath = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 const edgePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
@@ -14,47 +15,47 @@ export function normalizeBaseURL(value: string) {
   }
 }
 
-export function normalizeMediaBaseURL(value: string) {
+export function normalizeMediaBaseURL(value: string | undefined) {
+  if (value === undefined) return undefined
   const candidate = value.trim()
   const authority = candidate.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1]
   const hostnameAndPort = authority?.split('@').at(-1)
 
-  if (/[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
-    throw new Error('PLAYWRIGHT_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  if (!candidate || /[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
+    throw new Error(`PLAYWRIGHT_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`)
   }
 
   let url: URL
   try {
     url = new URL(candidate)
   } catch (error) {
-    throw new Error(`PLAYWRIGHT_MEDIA_BASE_URL must be an absolute HTTPS Worker root URL: ${candidate}`, { cause: error })
+    throw new Error(`PLAYWRIGHT_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`, { cause: error })
   }
 
-  const workerHostname = /^historias-videos\.([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.workers\.dev$/
   if (
     url.protocol !== 'https:'
-    || !workerHostname.test(url.hostname)
     || url.username
     || url.password
     || url.port
-    || url.pathname !== '/'
     || url.search
     || url.hash
+    || ![RAW_GITHUB_MEDIA_BASE_URL, RAW_GITHUB_MEDIA_BASE_URL.slice(0, -1)].includes(url.href)
   ) {
-    throw new Error('PLAYWRIGHT_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+    throw new Error(`PLAYWRIGHT_MEDIA_BASE_URL must be exactly ${RAW_GITHUB_MEDIA_BASE_URL}`)
   }
 
-  return url.href
+  return RAW_GITHUB_MEDIA_BASE_URL
 }
 
 export function publicMediaURL(webFilename: string, baseURL: string, configuredMediaBaseURL = mediaBaseURL) {
-  return new URL(`videos/${webFilename}`, configuredMediaBaseURL ?? baseURL).href
+  return configuredMediaBaseURL
+    ? new URL(webFilename, configuredMediaBaseURL).href
+    : new URL(`videos/${webFilename}`, baseURL).href
 }
 
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL?.trim()
 const baseURL = externalBaseURL ? normalizeBaseURL(externalBaseURL) : localBaseURL
-const externalMediaBaseURL = process.env.PLAYWRIGHT_MEDIA_BASE_URL
-export const mediaBaseURL = externalMediaBaseURL === undefined ? undefined : normalizeMediaBaseURL(externalMediaBaseURL)
+export const mediaBaseURL = normalizeMediaBaseURL(process.env.PLAYWRIGHT_MEDIA_BASE_URL)
 
 export default defineConfig({
   testDir: './e2e',

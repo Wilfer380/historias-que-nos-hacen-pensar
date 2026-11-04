@@ -36,7 +36,8 @@ jobs:
 
       - name: Build for the GitHub Pages project path
         env:
-          VITE_MEDIA_BASE_URL: ${{ vars.VITE_MEDIA_BASE_URL }}
+          VITE_MEDIA_BASE_URL: "https://raw.githubusercontent.com/Wilfer380/\
+            historias-que-nos-hacen-pensar/main/public/videos/"
         run: npm run build -- --base=/historias-que-nos-hacen-pensar/
 
       - name: Configure GitHub Pages

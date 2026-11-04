@@ -1,6 +1,6 @@
 import { expect, test, type ElementHandle, type Locator, type Page } from '@playwright/test'
 import { publicMediaURL } from '../playwright.config'
-import { stories } from '../src/data/stories'
+import { RAW_GITHUB_MEDIA_BASE_URL, stories } from '../src/data/stories'
 
 type Story = (typeof stories)[number]
 
@@ -28,6 +28,16 @@ function allowlistedMediaURL(candidate: string, baseURL: string | undefined) {
   return url
 }
 
+function isExactRawGitHubMediaURL(candidate: string) {
+  return stories.some(({ webFilename }) => candidate === `${RAW_GITHUB_MEDIA_BASE_URL}${webFilename}`)
+}
+
+function expectedMediaContentType(candidate: string) {
+  return isExactRawGitHubMediaURL(candidate)
+    ? /^application\/octet-stream(?:;|$)/
+    : /^video\/mp4(?:;|$)/
+}
+
 function trackMp4Requests(page: Page) {
   const requests: string[] = []
   page.on('request', (request) => {
@@ -43,6 +53,14 @@ async function openDeterministicApp(page: Page) {
   })
   await page.goto('./')
   await expect(page.getByRole('heading', { name: 'Historias que nos hacen pensar' })).toBeVisible()
+}
+
+async function expectIntersectsViewport(locator: Locator) {
+  await expect(locator).toBeVisible()
+  await expect.poll(() => locator.evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    return box.right > 0 && box.bottom > 0 && box.left < window.innerWidth && box.top < window.innerHeight
+  })).toBe(true)
 }
 
 async function expectWithinViewport(locator: Locator) {
@@ -165,6 +183,8 @@ test.describe('cross-browser compatibility', () => {
   test('supports deterministic roulette, reset, and lazy exact media selection', async ({ page, baseURL }) => {
     const mp4Requests = trackMp4Requests(page)
     await openDeterministicApp(page)
+    await expect.poll(() => page.locator('body').evaluate((body) => getComputedStyle(body).backgroundImage))
+      .toContain('data:image/svg+xml')
     await expect(page.locator('video')).toHaveCount(0)
     await expect(page.locator('[data-testid^="segment-"]')).toHaveCount(12)
     expect(mp4Requests, 'Initial page load must not request MP4 media').toEqual([])
@@ -172,6 +192,9 @@ test.describe('cross-browser compatibility', () => {
     await spinNext(page, 1)
     await expect(page.getByRole('heading', { name: stories[0].phrase })).toBeVisible()
     await expect(page.getByTestId('segment-1')).toHaveAttribute('data-revealed', 'true')
+    await expect(page.getByTestId('segment-1').locator('path')).toHaveClass(/segment-fill-revealed/)
+    await expect(page.getByTestId('segment-1').locator('path')).toHaveAttribute('fill', '#7f1d1d')
+    await expect(page.getByTestId('segment-phrase-1')).toHaveCSS('font-weight', '900')
     expect(mp4Requests, 'Spinning must not request MP4 media before VER VIDEO').toEqual([])
     const { video, handle } = await openSelectedVideo(page, 0, baseURL)
     await expect.poll(() => mp4Requests.length, { message: 'VER VIDEO must trigger a media request' }).toBeGreaterThan(0)
@@ -202,6 +225,9 @@ test.describe('cross-browser compatibility', () => {
       const open = page.getByRole('button', { name: 'VER VIDEO' })
       await expectWithinViewport(open)
       await open.click()
+      const playerRegion = page.getByTestId('video-player-region')
+      await expect(playerRegion).toBeFocused()
+      await expectIntersectsViewport(playerRegion)
       const close = page.getByRole('button', { name: 'CERRAR VIDEO' })
       const restart = page.getByRole('button', { name: 'VOLVER AL INICIO' })
       await expectWithinViewport(close)
@@ -231,15 +257,24 @@ test.describe('HTTP media registry', () => {
       seen.add(story.videoUrl)
       const mediaUrl = allowlistedMediaURL(publicMediaURL(story.webFilename, requireBaseURL(baseURL)), baseURL)
 
+      const expectedContentType = expectedMediaContentType(mediaUrl)
       const full = await request.get(mediaUrl)
       expect(full.status(), `${story.videoUrl} full response must be exactly HTTP 200`).toBe(200)
-      expect(full.headers()['content-type']).toMatch(/^video\/mp4(?:;|$)/)
+      expect(full.headers()['content-type']).toMatch(expectedContentType)
+      expect(Number(full.headers()['content-length'])).toBeGreaterThan(1024)
+      if (isExactRawGitHubMediaURL(mediaUrl)) {
+        expect(full.headers()['access-control-allow-origin']).toBe('*')
+      }
 
       const range = await request.get(mediaUrl, { headers: { Range: 'bytes=0-1023' } })
       expect(range.status()).toBe(206)
-      expect(range.headers()['content-type']).toMatch(/^video\/mp4(?:;|$)/)
+      expect(range.headers()['content-type']).toMatch(expectedContentType)
       expect(range.headers()['accept-ranges']).toBe('bytes')
       expect(range.headers()['content-range']).toMatch(/^bytes 0-1023\/\d+$/)
+      expect(range.headers()['content-length']).toBe('1024')
+      if (isExactRawGitHubMediaURL(mediaUrl)) {
+        expect(range.headers()['access-control-allow-origin']).toBe('*')
+      }
       expect((await range.body()).byteLength).toBe(1024)
     }
     expect(seen.size).toBe(12)

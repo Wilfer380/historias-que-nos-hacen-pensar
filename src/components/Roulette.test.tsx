@@ -18,9 +18,15 @@ function finishSpin() {
 let playMock: ReturnType<typeof vi.spyOn>
 let pauseMock: ReturnType<typeof vi.spyOn>
 let loadMock: ReturnType<typeof vi.spyOn>
+let scrollIntoViewMock: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   vi.useFakeTimers()
+  scrollIntoViewMock = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: scrollIntoViewMock,
+  })
   playMock = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
   pauseMock = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined)
   loadMock = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined)
@@ -85,7 +91,9 @@ describe('Roulette', () => {
     for (const story of stories.slice(0, 2)) {
       const segment = screen.getByTestId(`segment-${story.id}`)
       expect(segment).toHaveAttribute('data-revealed', 'true')
-      expect(segment.querySelector('path')).toHaveAttribute('fill', '#dc2626')
+      expect(segment.querySelector('path')).toHaveAttribute('fill', '#7f1d1d')
+      expect(segment.querySelector('path')).toHaveClass('segment-fill-revealed')
+      expect(screen.getByTestId(`segment-phrase-${story.id}`)).toHaveClass('segment-phrase')
       expect(segment).toHaveTextContent(story.phrase)
     }
     expect(screen.getByLabelText('2 de 12 historias descubiertas')).toBeInTheDocument()
@@ -139,6 +147,8 @@ describe('Roulette', () => {
       selectedStory.videoUrl,
     )
     expect(playMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('video-player-region')).toHaveFocus()
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'nearest' })
   })
 
   it('closing releases the video without losing roulette progress', () => {
@@ -199,7 +209,7 @@ describe('Roulette', () => {
     for (const [index, story] of stories.entries()) {
       const segment = screen.getByTestId(`segment-${story.id}`)
       expect(segment).toHaveAttribute('data-revealed', 'false')
-      expect(segment.querySelector('path')).not.toHaveAttribute('fill', '#dc2626')
+      expect(segment.querySelector('path')).not.toHaveAttribute('fill', '#7f1d1d')
       expect(within(segment).getByText(String(story.id))).toBeInTheDocument()
       expect(screen.queryByText(story.phrase)).not.toBeInTheDocument()
       expect(index).toBe(story.id - 1)
