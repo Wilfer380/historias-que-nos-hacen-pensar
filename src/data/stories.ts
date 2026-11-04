@@ -9,14 +9,51 @@ export interface Story {
   readonly sha256: string
 }
 
-// Vite replaces BASE_URL in browser builds. Playwright and Node import this
+// Vite replaces these values in browser builds. Playwright and Node import this
 // registry directly, where import.meta.env is absent and root-relative URLs are
 // required.
-const viteEnv = (import.meta as ImportMeta & { readonly env?: { readonly BASE_URL?: string } }).env
+type MediaEnv = { readonly BASE_URL?: string; readonly VITE_MEDIA_BASE_URL?: string }
+const viteEnv = (import.meta as ImportMeta & { readonly env?: MediaEnv }).env
 const baseUrl = viteEnv?.BASE_URL ?? '/'
 
+export function normalizeMediaBaseURL(value: string | undefined, fallback = '/') {
+  if (value === undefined) return fallback
+  const candidate = value.trim()
+  const authority = candidate.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1]
+  const hostnameAndPort = authority?.split('@').at(-1)
+
+  if (/[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
+    throw new Error('VITE_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  }
+
+  let url: URL
+  try {
+    url = new URL(candidate)
+  } catch (error) {
+    throw new Error(`VITE_MEDIA_BASE_URL must be an absolute HTTPS Worker root URL: ${candidate}`, { cause: error })
+  }
+
+  const workerHostname = /^historias-videos\.([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.workers\.dev$/
+  if (
+    url.protocol !== 'https:'
+    || !workerHostname.test(url.hostname)
+    || url.username
+    || url.password
+    || url.port
+    || url.pathname !== '/'
+    || url.search
+    || url.hash
+  ) {
+    throw new Error('VITE_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  }
+
+  return url.href
+}
+
+const mediaBaseUrl = normalizeMediaBaseURL(viteEnv?.VITE_MEDIA_BASE_URL, baseUrl)
+
 function mediaUrl(webFilename: `${string}.mp4`): Story['videoUrl'] {
-  return `${baseUrl}videos/${webFilename}`
+  return `${mediaBaseUrl}videos/${webFilename}`
 }
 
 export const stories = [

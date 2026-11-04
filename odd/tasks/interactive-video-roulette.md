@@ -17,7 +17,9 @@ The virtual event needs a reliable, shareable HTTPS experience that works withou
 - Integrated lazy-loaded HTML5 video player with loading/error states, controls, fullscreen support, restart, close, cleanup, and portrait-video layout.
 - Automated unit/component tests plus Playwright browser tests.
 - Public HTTPS deployment and post-deployment validation of the app and all twelve video routes.
-- Spanish replacement/deployment documentation.
+- Presentation polish: automatic focus/scroll to opened video, accessible revealed-segment contrast, and an original education/community-themed full-page background.
+- Microsoft Teams remote-control participation: the presenter grants/revokes control over the single projected browser session; no participant link or separate synchronized room is required.
+- Spanish replacement/deployment and Teams presentation documentation.
 
 ## Out of Scope
 
@@ -25,6 +27,7 @@ The virtual event needs a reliable, shareable HTTPS experience that works withou
 - Autoplaying or preloading all videos when the page opens.
 - Paid hosting without explicit user authorization.
 - Localhost or local filesystem paths as the final delivery.
+- A separate participant link, QR-code room, user-account system, or custom synchronized multi-user backend; Microsoft Teams owns remote-control authorization.
 
 ## Critical Story Mapping
 
@@ -97,12 +100,24 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `77d3442` (`test(e2e): verify roulette and all media`).
   - Independent verification initially found coverage gaps; two correction rounds closed them, and final re-verification reported no findings.
 
-- [ ] **T5 — Deploy and verify public HTTPS delivery**
-  - Select an authorized free provider based on actual limits and available user access.
-  - Deploy the site and byte-identical videos.
-  - Validate the public page and all twelve HTTPS MP4 URLs from a clean browser context, including content type, range behavior, image/audio, and time progression.
-  - Document how to replace a video and re-run integrity/deployment checks.
-  - Checks: public HTTPS URL works outside localhost; all twelve production media tests pass; final URL is reported only after verification.
+- [ ] **T5 — Complete range-capable public media delivery**
+  - Keep the app on the authorized public GitHub Pages URL and route only the twelve allowlisted MP4s through the user-authorized Cloudflare Worker.
+  - Preserve bytes while enforcing `video/mp4`, HTTP 200/206/416 semantics, range forwarding, CORS, strict allowlisting, and streaming without full-file buffering.
+  - Configure the GitHub Pages build with the deployed Worker media base and repeat all production route/playback checks.
+  - Checks: public HTTPS app works outside localhost; all twelve Worker routes match hashes, return correct range responses, and pass the production browser suite.
+
+- [ ] **T6 — Polish projected presentation and Teams participation**
+  - Scroll and focus the integrated player immediately after “VER VIDEO” so no manual scrolling is needed.
+  - Replace the saturated revealed red with a darker accessible treatment and ensure every revealed phrase remains legible.
+  - Add an original education/community-themed full-page background with an overlay that preserves contrast and performance.
+  - Document the Microsoft Teams grant-control/revoke-control presentation flow; the app remains one projected browser session with no participant links.
+  - Checks: keyboard focus and scroll behavior, contrast/readability, desktop/mobile/Teams viewport rendering, and existing roulette/video behavior all pass.
+
+- [ ] **T7 — Final public HTTPS verification and handoff**
+  - Validate the final public page and all twelve HTTPS MP4 URLs from clean Chrome, Edge, and Firefox contexts.
+  - Confirm lazy loading, exact pointer/story/video mapping, range behavior, image/audio/time progression, restart/close/cleanup, reset, and responsive presentation.
+  - Finalize Spanish replacement/deployment/Teams instructions and report the verified URL only with honest remaining limitations.
+  - Checks: all local and production commands pass; final public URL and repository are recorded.
 
 ## Acceptance Criteria
 
@@ -116,6 +131,10 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 8. Reset restores all twelve numbers, colors, and selection state.
 9. The deployed application lazily requests only the chosen video.
 10. All twelve deployed videos are byte-identical to their supplied originals and available over stable HTTPS URLs.
+11. Pressing “VER VIDEO” scrolls/focuses the integrated player without requiring manual navigation.
+12. Revealed phrases remain clearly readable against a subdued accessible highlight color.
+13. The full page uses an original education/community background without reducing text/control contrast.
+14. During Teams projection, the presenter can grant remote control so a participant operates the same shared browser session without receiving another application link.
 
 ## Progress and Evidence
 
@@ -142,4 +161,4 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 
 ## Next Step
 
-Execute T5: document video replacement, deploy the production build to an authorized free HTTPS provider, then rerun route, range, lazy-load, roulette, responsive, and all-video playback checks against the public URL.
+Complete T5 by independently verifying and deploying the strict Cloudflare media Worker, configure the Pages media base, and repeat production checks. Then implement T6 presentation polish and the documented Microsoft Teams remote-control flow before final T7 public verification.

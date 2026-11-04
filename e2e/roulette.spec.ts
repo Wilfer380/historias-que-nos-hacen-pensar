@@ -9,8 +9,10 @@ function requireBaseURL(baseURL: string | undefined) {
   return baseURL
 }
 
-function expectedMediaPath(story: Story, baseURL: string | undefined) {
-  return new URL(publicMediaURL(story.webFilename, requireBaseURL(baseURL))).pathname
+function expectedMediaSource(story: Story, baseURL: string | undefined) {
+  const appURL = new URL(requireBaseURL(baseURL))
+  const mediaURL = new URL(publicMediaURL(story.webFilename, appURL.href))
+  return mediaURL.origin === appURL.origin ? mediaURL.pathname : mediaURL.href
 }
 
 function expectedMediaURLs(baseURL: string | undefined) {
@@ -93,7 +95,7 @@ async function openSelectedVideo(page: Page, storyIndex: number, baseURL: string
   const story = stories[storyIndex]
   await page.getByRole('button', { name: 'VER VIDEO' }).click()
   const video = page.getByLabel(`Video de la historia ${story.id}: ${story.phrase}`)
-  await expect(video).toHaveAttribute('src', expectedMediaPath(story, baseURL))
+  await expect(video).toHaveAttribute('src', expectedMediaSource(story, baseURL))
   await video.evaluate(async (element) => {
     const media = element as HTMLVideoElement
     media.muted = true
@@ -282,7 +284,7 @@ test.describe('full Chrome media lifecycle', () => {
       )
     }
 
-    expect(observedUrls).toEqual(stories.map((story) => expectedMediaPath(story, baseURL)))
+    expect(observedUrls).toEqual(stories.map((story) => expectedMediaSource(story, baseURL)))
     expect(new Set(observedUrls).size).toBe(12)
   })
 
@@ -300,7 +302,7 @@ test.describe('full Chrome media lifecycle', () => {
     )
     await expect(page.getByLabel('2 de 12 historias descubiertas')).toBeVisible()
     const second = await openSelectedVideo(page, 1, baseURL)
-    await expect(second.video).toHaveAttribute('src', expectedMediaPath(stories[1], baseURL))
-    await expect(second.video).not.toHaveAttribute('src', expectedMediaPath(stories[0], baseURL))
+    await expect(second.video).toHaveAttribute('src', expectedMediaSource(stories[1], baseURL))
+    await expect(second.video).not.toHaveAttribute('src', expectedMediaSource(stories[0], baseURL))
   })
 })

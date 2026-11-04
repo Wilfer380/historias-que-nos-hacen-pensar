@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "historias-que-nos-hacen-pensar-media",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-03-01",
+  "workers_dev": true,
+  "preview_urls": false
+}

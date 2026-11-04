@@ -14,12 +14,47 @@ export function normalizeBaseURL(value: string) {
   }
 }
 
-export function publicMediaURL(webFilename: string, baseURL: string) {
-  return new URL(`videos/${webFilename}`, baseURL).href
+export function normalizeMediaBaseURL(value: string) {
+  const candidate = value.trim()
+  const authority = candidate.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1]
+  const hostnameAndPort = authority?.split('@').at(-1)
+
+  if (/[?#]/.test(candidate) || hostnameAndPort?.includes(':')) {
+    throw new Error('PLAYWRIGHT_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  }
+
+  let url: URL
+  try {
+    url = new URL(candidate)
+  } catch (error) {
+    throw new Error(`PLAYWRIGHT_MEDIA_BASE_URL must be an absolute HTTPS Worker root URL: ${candidate}`, { cause: error })
+  }
+
+  const workerHostname = /^historias-videos\.([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\.workers\.dev$/
+  if (
+    url.protocol !== 'https:'
+    || !workerHostname.test(url.hostname)
+    || url.username
+    || url.password
+    || url.port
+    || url.pathname !== '/'
+    || url.search
+    || url.hash
+  ) {
+    throw new Error('PLAYWRIGHT_MEDIA_BASE_URL must be an HTTPS historias-videos.<account>.workers.dev root URL without credentials, port, path, query, or fragment')
+  }
+
+  return url.href
+}
+
+export function publicMediaURL(webFilename: string, baseURL: string, configuredMediaBaseURL = mediaBaseURL) {
+  return new URL(`videos/${webFilename}`, configuredMediaBaseURL ?? baseURL).href
 }
 
 const externalBaseURL = process.env.PLAYWRIGHT_BASE_URL?.trim()
 const baseURL = externalBaseURL ? normalizeBaseURL(externalBaseURL) : localBaseURL
+const externalMediaBaseURL = process.env.PLAYWRIGHT_MEDIA_BASE_URL
+export const mediaBaseURL = externalMediaBaseURL === undefined ? undefined : normalizeMediaBaseURL(externalMediaBaseURL)
 
 export default defineConfig({
   testDir: './e2e',

@@ -3,6 +3,7 @@ dist/
 .vite/
 coverage/
 .vitest/
+.wrangler/
 playwright-report/
 test-results/
 *.local

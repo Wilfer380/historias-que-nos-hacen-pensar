@@ -35,6 +35,8 @@ jobs:
         run: npm run verify:media
 
       - name: Build for the GitHub Pages project path
+        env:
+          VITE_MEDIA_BASE_URL: ${{ vars.VITE_MEDIA_BASE_URL }}
         run: npm run build -- --base=/historias-que-nos-hacen-pensar/
 
       - name: Configure GitHub Pages
