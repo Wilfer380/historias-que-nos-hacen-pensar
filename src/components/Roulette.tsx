@@ -5,6 +5,7 @@ import {
   rotationForSegment,
   segmentAtPointer,
 } from '../lib/rouletteMath'
+import { VideoPlayer } from './VideoPlayer'
 
 const VIEWBOX_SIZE = 400
 const CENTER = VIEWBOX_SIZE / 2
@@ -104,6 +105,7 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
   const effectiveSpinDuration = prefersReducedMotion ? Math.min(spinDurationMs, 80) : spinDurationMs
   const [revealedIds, setRevealedIds] = useState<ReadonlySet<StoryId>>(() => new Set())
   const [selectedStory, setSelectedStory] = useState<Story | null>(null)
+  const [openStory, setOpenStory] = useState<Story | null>(null)
   const [rotation, setRotation] = useState(0)
   const [isSpinning, setIsSpinning] = useState(false)
   const [announcedStatus, setAnnouncedStatus] = useState('La ruleta está lista para girar.')
@@ -154,6 +156,7 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
     }
 
     pendingStory.current = story
+    setOpenStory(null)
     setSelectedStory(null)
     setIsSpinning(true)
     setAnnouncedStatus('La ruleta está girando.')
@@ -166,6 +169,7 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
     completionTimer.current = null
     pendingStory.current = null
     setRevealedIds(new Set())
+    setOpenStory(null)
     setSelectedStory(null)
     setRotation(0)
     setIsSpinning(false)
@@ -252,6 +256,9 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
             ) : (
               <p>Una historia para escuchar, compartir y pensar en comunidad.</p>
             )}
+            <button className="button button-primary" type="button" onClick={() => setOpenStory(selectedStory)}>
+              VER VIDEO
+            </button>
           </>
         ) : (
           <>
@@ -261,6 +268,8 @@ export function Roulette({ random = Math.random, spinDurationMs = 4800 }: Roulet
           </>
         )}
       </aside>
+
+      {openStory && <VideoPlayer story={openStory} onClose={() => setOpenStory(null)} />}
 
       <p className="sr-only" role="status" aria-live="polite">
         {announcedStatus}
