@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "vitest",
+    "test": "vitest --exclude e2e/**",
+    "test:e2e": "set PLAYWRIGHT_BROWSERS_PATH=0&& playwright test",
     "verify:media": "tsx scripts/verify-media.ts"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "vite": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.8",
