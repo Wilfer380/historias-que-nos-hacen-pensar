@@ -72,11 +72,14 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `cf37302` (`feat(media): establish verified story registry`).
   - Native assessment/review was unavailable because the native authority inventory returned `schema-incompatible`; the required independent verifier completed with no findings.
 
-- [ ] **T2 — Implement exact non-repeating roulette behavior**
-  - Build the responsive wheel, fixed pointer, animation, selection math, revealed state, end-of-round state, and reset.
-  - Ensure the pointer, selected segment, displayed phrase, and selected story ID always agree.
-  - Add accessibility semantics and component/unit tests.
-  - Checks: twelve initial numbers; no initial selection; disabled control while spinning; deterministic selection tests; no repeats; red revealed segments; reset restores state.
+- [x] **T2 — Implement exact non-repeating roulette behavior**
+  - Built the responsive SVG wheel, fixed pointer, eased animation, exported selection math, revealed state, end-of-round state, and reset.
+  - Verified that the resting rotation, pointer, selected segment, displayed phrase, and selected story ID agree across all twelve IDs.
+  - Added accessible status semantics, keyboard-operable controls, focus styles, reduced-motion handling, and responsive layouts.
+  - Checks passed: twelve initial numbers; no initial selection; disabled control while spinning; deterministic selection tests; no repeats; persistent red revealed segments; full-round completion; reset restores state.
+  - Corrected a verifier finding so the twelfth story remains visible in the result panel alongside the separate round-complete message.
+  - Work-unit commit: `644105d` (`feat(roulette): add exact non-repeating spins`).
+  - Independent re-verification completed with no remaining findings.
 
 - [ ] **T3 — Implement the integrated lazy video player**
   - Load only the selected story after the user presses “VER VIDEO”.
@@ -119,7 +122,12 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - An independent verification run repeated all three commands and reported no findings.
 - Parent spot check repeated `npm run verify:media` successfully.
 - T1 was committed as work unit `cf37302` on `feature/interactive-video-roulette`.
+- T2 ordinary verification passed: `npm test -- --run` (11 tests), `npm run build`, and `npm run verify:media` (12 hashes).
+- Independent T2 verification found one final-spin result-panel defect; it was corrected and independently re-verified with no remaining findings.
+- Parent spot check ran the focused roulette suite successfully (6 tests).
+- T2 was committed as work unit `644105d` on `feature/interactive-video-roulette`.
+- An accidental root-level npm installation was diagnosed and its exact three generated artifacts were removed after explicit user authorization; the nested project remained intact.
 
 ## Next Step
 
-Execute T2 through the bounded implementation worker: build the exact-pointer, non-repeating roulette behavior and its focused tests.
+Execute T3 through the bounded implementation worker: integrate lazy, in-page playback for the selected original video with lifecycle cleanup and focused tests.
