@@ -81,11 +81,13 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `644105d` (`feat(roulette): add exact non-repeating spins`).
   - Independent re-verification completed with no remaining findings.
 
-- [ ] **T3 — Implement the integrated lazy video player**
-  - Load only the selected story after the user presses “VER VIDEO”.
-  - Implement loading, playback fallback, native controls, restart, close, error handling, cleanup, and portrait layout.
-  - Add component tests for URL selection and lifecycle cleanup.
-  - Checks: no video request at startup; selected URL matches selected ID; close pauses and releases the resource; switching stories never overlaps playback.
+- [x] **T3 — Implement the integrated lazy video player**
+  - The video element and source are created only after the user presses “VER VIDEO” for a selected story.
+  - Implemented loading/waiting/error states, autoplay-policy fallback, native controls, restart, close, cleanup, and portrait-friendly containment.
+  - Added focused component tests for exact URL selection, playback attempt, lifecycle cleanup, story switching, reset, and preserved roulette progress.
+  - Checks passed: no video element/source before explicit activation; selected URL matches selected ID; close pauses, removes the source, calls `load()`, and preserves revealed stories; switching stories and reset release prior media.
+  - Work-unit commit: `bc106ce` (`feat(video): add lazy integrated playback`).
+  - Independent verification completed with no findings; real decoding/rendering/audio validation remains assigned to T4.
 
 - [ ] **T4 — Run local browser and media verification**
   - Add Playwright coverage for roulette state, exact mapping, no repeats, reset, responsive interaction, and the twelve video routes.
@@ -127,7 +129,10 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - Parent spot check ran the focused roulette suite successfully (6 tests).
 - T2 was committed as work unit `644105d` on `feature/interactive-video-roulette`.
 - An accidental root-level npm installation was diagnosed and its exact three generated artifacts were removed after explicit user authorization; the nested project remained intact.
+- T3 ordinary verification passed: `npm test -- --run` (19 tests), `npm run build`, and `npm run verify:media` (12 hashes).
+- Independent T3 verification found no issues and confirmed all cleanup paths; parent focused player spot check passed 5 tests.
+- T3 was committed as work unit `bc106ce` on `feature/interactive-video-roulette`.
 
 ## Next Step
 
-Execute T3 through the bounded implementation worker: integrate lazy, in-page playback for the selected original video with lifecycle cleanup and focused tests.
+Execute T4: add Playwright browser coverage and validate real local HTTP media responses, rendered frames, playback-time progression, audio tracks, pause/resume, close, reset, and story switching across all twelve videos.
