@@ -53,7 +53,7 @@ The six `(1)` suffixes in the initial specification are absent from the supplied
 - Supplied collection: 12 files, 105,517,157 bytes (100.63 MiB); no individual file exceeds 25 MiB.
 - Canonical deployment copies may change filenames only; content hashes must remain identical.
 - The source files in `C:/Users/wandica/Downloads/rule` are read-only inputs.
-- Video URLs must be HTTPS in production, return `video/mp4`, and support browser playback/range requests.
+- Video URLs must be HTTPS in production and support browser playback/range requests; same-origin local media returns `video/mp4`, while the exact allowlisted GitHub Raw production authority is accepted with its honest `application/octet-stream` MIME.
 - Production must not preload the twelve videos.
 - Strict TDD mode: off. Source: the user requires automated tests and real playback validation but did not request strict RED/GREEN sequencing, and this new project has no existing TDD configuration. Ordinary functional testing remains mandatory.
 - Planned runners: `npm test`, `npm run build`, and `npm run test:e2e` after project scaffolding.
@@ -100,11 +100,12 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Work-unit commit: `77d3442` (`test(e2e): verify roulette and all media`).
   - Independent verification initially found coverage gaps; two correction rounds closed them, and final re-verification reported no findings.
 
-- [ ] **T5 — Complete GitHub-only public media delivery**
-  - Keep the app on the authorized public GitHub Pages URL and load only the twelve exact MP4s from the repository’s fixed `raw.githubusercontent.com` media base.
-  - Preserve byte-identical files and require GitHub Raw HTTP 206 ranges, Content-Range/Length, Accept-Ranges, and CORS; accept its honest `application/octet-stream` response only for that exact allowlisted authority.
-  - Keep local development on same-origin `/videos/` with `video/mp4`; production configuration is hardcoded in the Pages workflow rather than a mutable repository variable.
-  - Checks pending final redeploy: public HTTPS app works outside localhost; all twelve raw GitHub routes preserve exact mapping/ranges and pass the production browser suite.
+- [x] **T5 — Complete GitHub-only public media delivery**
+  - Kept the app on the authorized public GitHub Pages URL and load only the twelve exact MP4s from the repository’s fixed `raw.githubusercontent.com` media base.
+  - Preserved byte-identical files and verified GitHub Raw HTTP 206 ranges, Content-Range/Length, Accept-Ranges, and CORS; its honest `application/octet-stream` response is accepted only for that exact allowlisted authority.
+  - Kept local development on same-origin `/videos/` with `video/mp4`; production configuration is hardcoded in the Pages workflow rather than a mutable repository variable.
+  - Checks passed: public HTTPS app works outside localhost; all twelve raw GitHub routes preserve exact mapping/ranges and pass the production browser suite.
+  - Work-unit commit: `3b18a4b` (`fix(video): support cross-origin public playback`); deployed successfully through Pages workflow `42042081036`.
 
 - [x] **T6 — Polish projected presentation and Teams participation**
   - The integrated player now receives focus and scrolls into view immediately after “VER VIDEO”, respecting reduced motion.
@@ -113,11 +114,12 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
   - Documented the Microsoft Teams named grant-control/revoke-control flow and independent behavior of the shareable public link.
   - Checks passed: 23 component/unit tests, build, 12 media hashes, and Playwright 12 passed/6 deliberate skips across desktop/mobile browsers.
 
-- [ ] **T7 — Final public HTTPS verification and handoff**
-  - Validate the final public page and all twelve HTTPS MP4 URLs from clean Chrome, Edge, and Firefox contexts.
-  - Confirm lazy loading, exact pointer/story/video mapping, range behavior, image/audio/time progression, restart/close/cleanup, reset, and responsive presentation.
-  - Finalize Spanish replacement/deployment/Teams instructions and report the verified URL only with honest remaining limitations.
-  - Checks: all local and production commands pass; final public URL and repository are recorded.
+- [x] **T7 — Final public HTTPS verification and handoff**
+  - Validated the final public page and all twelve HTTPS MP4 URLs from clean Chrome, Edge, and Firefox contexts.
+  - Confirmed lazy loading, exact pointer/story/video mapping, range behavior, image/audio/time progression, restart/close/cleanup, reset, and responsive presentation.
+  - Finalized Spanish replacement/deployment/Teams instructions and retained the honest GitHub Raw MIME limitation.
+  - Checks passed: final public matrix 12 passed/6 deliberate skips; URL `https://wilfer380.github.io/historias-que-nos-hacen-pensar/`; repository `https://github.com/Wilfer380/historias-que-nos-hacen-pensar`.
+  - Verification commit: `62e19e0` (`test(e2e): verify usable public controls`).
 
 ## Acceptance Criteria
 
@@ -163,7 +165,12 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - Complete local re-verification passed all five required commands: 23 unit/component tests, local build, 12 media hashes, Playwright 12 passed/6 deliberate skips, and the exact Pages production build.
 - Parent structural readback confirmed `crossOrigin="anonymous"`, its component assertion, and executable desktop/mobile viewport coverage; a focused Chrome spot check passed both viewport cases after restoring the local-base build.
 - Native assessment remained schema-incompatible/unassessable, so the completed independent verifier run is retained as the required high-risk fallback evidence.
+- Work-unit commit `3b18a4b` (`fix(video): support cross-origin public playback`) deployed successfully through GitHub Pages workflow run `42042081036`.
+- The first post-deployment matrix passed 11 browser tests with 6 deliberate skips: all 12 public range/media lifecycles and every mobile case passed, while Chrome desktop exposed an invalid full-viewport geometry requirement after public video metadata changed the layout.
+- The corrected test treats the restart control as usable when it is visible, enabled, and its existing click/time-reset assertion succeeds; a focused public Chrome desktop rerun passed.
+- Final public production matrix passed in 57.1 seconds: Chrome 6/6, Edge 3/3 applicable, Firefox 3/3 applicable, with 6 deliberate browser-scoped skips and zero failures.
+- Every public video produced a presented frame and `capture-stream:1` audio evidence without `SecurityError`; all twelve range routes and cleanup/switching behaviors passed.
 
 ## Next Step
 
-Commit and deploy the verified GitHub-only correction to `main`, wait for the Pages workflow, then execute T7 production verification against the public Pages URL with the exact raw GitHub media base.
+Feature complete. Preserve the verified public URL and use the documented Microsoft Teams named grant/revoke-control flow for projected participation.
