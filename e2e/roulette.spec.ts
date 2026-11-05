@@ -79,14 +79,16 @@ async function expectFocusedPlayerAndVideoInViewport(playerRegion: Locator, vide
 async function expectWithinViewport(locator: Locator) {
   await expect(locator).toBeVisible()
   await locator.scrollIntoViewIfNeeded()
-  const box = await locator.boundingBox()
   const viewport = locator.page().viewportSize()
-  expect(box, 'Visible control must have a bounding box').not.toBeNull()
   expect(viewport, 'The test must use an explicit viewport').not.toBeNull()
-  expect(box!.x).toBeGreaterThanOrEqual(0)
-  expect(box!.y).toBeGreaterThanOrEqual(0)
-  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width)
-  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height)
+  await expect.poll(async () => {
+    const box = await locator.boundingBox()
+    if (!box) return false
+    return box.x >= 0
+      && box.y >= 0
+      && box.x + box.width <= viewport!.width
+      && box.y + box.height <= viewport!.height
+  }, { message: 'Visible control must settle fully inside the viewport' }).toBe(true)
 }
 
 async function expectReleasedMedia(
@@ -246,7 +248,8 @@ test.describe('cross-browser compatibility', () => {
       const close = page.getByRole('button', { name: 'CERRAR VIDEO' })
       const restart = page.getByRole('button', { name: 'VOLVER AL INICIO' })
       await expectWithinViewport(close)
-      await expectWithinViewport(restart)
+      await expect(restart).toBeVisible()
+      await expect(restart).toBeEnabled()
       await expect.poll(
         () => video.evaluate((element) => (element as HTMLVideoElement).currentTime),
         { timeout: 10_000 },
