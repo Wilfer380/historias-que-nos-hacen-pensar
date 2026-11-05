@@ -55,11 +55,24 @@ async function openDeterministicApp(page: Page) {
   await expect(page.getByRole('heading', { name: 'Historias que nos hacen pensar' })).toBeVisible()
 }
 
-async function expectIntersectsViewport(locator: Locator) {
-  await expect(locator).toBeVisible()
-  await expect.poll(() => locator.evaluate((element) => {
-    const box = element.getBoundingClientRect()
-    return box.right > 0 && box.bottom > 0 && box.left < window.innerWidth && box.top < window.innerHeight
+async function expectFocusedPlayerAndVideoInViewport(playerRegion: Locator, video: Locator) {
+  await expect(playerRegion).toBeVisible()
+  await expect(video).toBeVisible()
+  await expect.poll(() => playerRegion.evaluate((region) => {
+    const videoElement = region.querySelector('video')
+    if (!videoElement) return false
+
+    const regionBox = region.getBoundingClientRect()
+    const videoBox = videoElement.getBoundingClientRect()
+    const visibleVideoHeight = Math.min(videoBox.bottom, window.innerHeight) - Math.max(videoBox.top, 0)
+    const meaningfulVideoHeight = Math.min(120, videoBox.height * 0.25)
+    return regionBox.top >= 0
+      && regionBox.top < window.innerHeight
+      && regionBox.left >= 0
+      && regionBox.right <= window.innerWidth
+      && videoBox.left >= 0
+      && videoBox.right <= window.innerWidth
+      && visibleVideoHeight >= meaningfulVideoHeight
   })).toBe(true)
 }
 
@@ -226,14 +239,14 @@ test.describe('cross-browser compatibility', () => {
       await expectWithinViewport(open)
       await open.click()
       const playerRegion = page.getByTestId('video-player-region')
+      const video = page.locator('video')
       await expect(playerRegion).toBeFocused()
-      await expectIntersectsViewport(playerRegion)
+      await expect(video).toHaveCount(1)
+      await expectFocusedPlayerAndVideoInViewport(playerRegion, video)
       const close = page.getByRole('button', { name: 'CERRAR VIDEO' })
       const restart = page.getByRole('button', { name: 'VOLVER AL INICIO' })
       await expectWithinViewport(close)
       await expectWithinViewport(restart)
-      const video = page.locator('video')
-      await expect(video).toHaveCount(1)
       await expect.poll(
         () => video.evaluate((element) => (element as HTMLVideoElement).currentTime),
         { timeout: 10_000 },

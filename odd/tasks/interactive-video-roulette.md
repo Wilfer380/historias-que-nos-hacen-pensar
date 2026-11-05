@@ -158,7 +158,12 @@ Expected authored source/test/documentation changes: approximately 1,200–1,800
 - All twelve Chrome videos had finite durations (53.96–70.36 seconds), positive dimensions, advancing time, a presented frame via `requestVideoFrameCallback`, and one audio track via `captureStream()`.
 - Network tests proved zero MP4 requests before explicit activation, only the selected allowlisted URL afterward, exact HTTP 200 full responses, and exact HTTP 206 range responses.
 - T4 was committed as work unit `77d3442` on `feature/interactive-video-roulette`.
+- Resume verification of the public-playback correction passed 23 unit/component tests, the local build, all 12 media hashes, and the exact Pages production build.
+- The resumed local Playwright run initially failed before test discovery because the viewport helper used `await` inside a non-async polling callback; the helper was corrected to query its nested video synchronously inside the browser evaluation.
+- Complete local re-verification passed all five required commands: 23 unit/component tests, local build, 12 media hashes, Playwright 12 passed/6 deliberate skips, and the exact Pages production build.
+- Parent structural readback confirmed `crossOrigin="anonymous"`, its component assertion, and executable desktop/mobile viewport coverage; a focused Chrome spot check passed both viewport cases after restoring the local-base build.
+- Native assessment remained schema-incompatible/unassessable, so the completed independent verifier run is retained as the required high-risk fallback evidence.
 
 ## Next Step
 
-Complete the final GitHub-only commit and deploy it to `main`, then execute T7 production verification against the public Pages URL with the exact raw GitHub media base.
+Commit and deploy the verified GitHub-only correction to `main`, wait for the Pages workflow, then execute T7 production verification against the public Pages URL with the exact raw GitHub media base.

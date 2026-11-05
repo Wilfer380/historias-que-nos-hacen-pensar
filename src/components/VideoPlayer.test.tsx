@@ -33,6 +33,7 @@ describe('VideoPlayer', () => {
     render(<VideoPlayer story={story} onClose={vi.fn()} />)
 
     const video = screen.getByLabelText(`Video de la historia ${story.id}: ${story.phrase}`)
+    expect(video).toHaveAttribute('crossorigin', 'anonymous')
     expect(video).toHaveAttribute('src', story.videoUrl)
     expect(video).toHaveAttribute('preload', 'none')
     expect(video).toHaveAttribute('controls')

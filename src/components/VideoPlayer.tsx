@@ -80,6 +80,7 @@ export function VideoPlayer({ story, onClose }: VideoPlayerProps) {
       <div className="video-frame">
         <video
           ref={videoRef}
+          crossOrigin="anonymous"
           src={story.videoUrl}
           preload="none"
           controls
